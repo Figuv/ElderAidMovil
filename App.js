@@ -14,6 +14,8 @@ import CampaignsScreen from "./screens/Campaigns";
 import DonationsScreen from "./screens/Donations";
 import SettingsScreen from "./screens/Settings";
 import CaimpaignModal from "./components/CampaignComponents/CaimpaignModal";
+import DonationModal from "./components/DonationComponents/DonationModal";
+import DonationComplete from "./screens/DonationComplete";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -94,12 +96,22 @@ function MyStack() {
         name="Home"
         component={BottomTabNavigator}
       />
+      <Stack.Screen
+        options={{ headerShown: false }}
+        name="DonationCompleteScreen"
+        component={DonationComplete}
+      />
 
       <Stack.Group screenOptions={{ presentation: "modal" }}>
         <Stack.Screen
           options={{ headerShown: false }}
           name="CampaignModal"
           component={CaimpaignModal}
+        />
+        <Stack.Screen
+          options={{ headerShown: false }}
+          name="DonationModal"
+          component={DonationModal}
         />
       </Stack.Group>
     </Stack.Navigator>
