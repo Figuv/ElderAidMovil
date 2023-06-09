@@ -25,19 +25,7 @@ const CampaignModal = (props) => {
   return (
     <SafeAreaView className="bg-tertiary flex-1">
       <View className="">
-        {/* <ScrollView
-          className="w-screen"
-          horizontal={true}
-          showsVerticalScrollIndicator={false}
-        >
-          {campaign.campaign_images.map((image, index) => (
-            <Image
-              key={index}
-              source={{ uri: image.image_url }}
-              className="aspect-[9/5] w-screen"
-            />
-          ))}
-        </ScrollView> */}
+       
         <FlatList
           data={campaign.campaign_images}
           horizontal={true}
