@@ -1,7 +1,15 @@
 import React, { useContext, useEffect, useState } from "react";
 import { View, Text, SafeAreaView } from "react-native";
 import { AppContext } from "../AppContext";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  onSnapshot,
+} from "firebase/firestore";
 import db from "../database/firebase";
 import DonationCard from "../components/DonationComponents/DonationCard";
 import { ScrollView } from "react-native-gesture-handler";
@@ -13,35 +21,32 @@ const DonationsScreen = () => {
   const [campaigns, setCampaigns] = useState([]);
 
   useEffect(() => {
-    const fetchDonations = async () => {
-      try {
-        const q = query(
-          collection(db, "donations"),
-          where("userId", "==", user.id)
-        );
-        const querySnapshot = await getDocs(q);
+    const unsubscribe = onSnapshot(
+      query(collection(db, "donations"), where("userId", "==", user.id)),
+      (snapshot) => {
         const donationList = [];
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach((doc) => {
           donationList.push(doc.data());
         });
         setDonations(donationList);
-      } catch (error) {
+      },
+      (error) => {
         console.log(error);
       }
-    };
+    );
 
-    fetchDonations();
+    return () => unsubscribe();
   }, []);
 
   const fetchCampaign = async (documentId) => {
     try {
-      const docRef = doc(db, "campaign", documentId);
+      const docRef = doc(db, "campaigns", documentId);
       const docSnap = await getDoc(docRef);
-  
+
       if (docSnap.exists()) {
         // El documento existe, puedes acceder a sus datos utilizando docSnap.data()
         const documentData = docSnap.data();
-        console.log("Datos del documento:", documentData);
+        // console.log("Datos del documento:", documentData);
         return documentData;
       } else {
         console.log("No se encontró ningún documento con el ID:", documentId);
@@ -57,7 +62,7 @@ const DonationsScreen = () => {
     const fetchCampaigns = async () => {
       const campaignList = [];
       for (const donation of donations) {
-        const campaignData = await fetchCampaign(donation.campaignId);
+        const campaignData = await fetchCampaign(donation.campaignId.toString());
         campaignList.push(campaignData);
       }
       setCampaigns(campaignList);
@@ -67,10 +72,12 @@ const DonationsScreen = () => {
   }, [donations]);
 
   return (
-    <SafeAreaView className="h-screen w-screen bg-white">
-      <View className="flex-1 justify-center items-center">
+    <SafeAreaView className="h-screen w-screen bg-white ">
+      <View className="flex-1 justify-center items-center mb-20">
         <Text className="text-4xl m-4 font-bold">Mis Donaciones</Text>
-        <ScrollView>
+        <ScrollView
+          className=""
+        showsVerticalScrollIndicator={false}>
           {donations.map((donation, index) => (
             <DonationCard
               key={index}

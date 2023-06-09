@@ -11,7 +11,13 @@ import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { AppContext } from "../../AppContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { addDoc, collection } from "firebase/firestore";
+import {
+  addDoc,
+  arrayUnion,
+  collection,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import db from "../../database/firebase";
 import * as Progress from "react-native-progress";
 
@@ -29,44 +35,62 @@ const DonationModal = (props) => {
   const [uploading, setUploading] = useState(false);
 
   const [date, setDate] = useState(new Date());
-  const [showPicker, setShowPicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const showDatepicker = () => {
-    setShowPicker(true);
+  // const showDatePicker = () => {
+  //   setShowPicker(true);
+  // };
+
+  const handleShowDatePicker = () => {
+    setShowDatePicker(true);
   };
 
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
-    setShowPicker(Platform.OS === "ios");
+    setShowDatePicker(Platform.OS === "ios");
     setDate(currentDate);
   };
 
   const campaign = props.route.params.campaign;
+  console.log(campaign);
 
   const handleDonation = async () => {
     try {
       console.log("Registering donation....");
-      const amount = donateItems ? itemQuantity : donationAmount;
+      const quantity = donateItems
+        ? parseInt(itemQuantity)
+        : parseInt(donationAmount);
       const description = donationDescription;
-      const donationDate = date;
-      const fullName = anonymousDonation ? "Donación Anónima" : user.fullname;
-      const location = useRegisteredLocation ? user.address : address;
+      const donation_date = date;
+      // const location = useRegisteredLocation ? user.address : address;
       const userId = user.id;
-      const campaignId = campaign.id;
+      const campaignId = parseInt(campaign.id);
+      const anonymous = anonymousDonation;
+      const institutionId = campaign.institution_id;
 
       // Crea un objeto con los datos de la donación
       const donationData = {
-        amount,
+        quantity,
         description,
-        donationDate,
-        fullName,
-        location,
+        donation_date,
+        anonymous,
         userId,
         campaignId,
+        institutionId,
+        status: "to_collect",
       };
 
-      // Sube los datos a Firestore
-      await addDoc(collection(db, "donations"), donationData);
+      // Sube los datos a Firestore y obtén la referencia de la donación
+      const donationRef = await addDoc(
+        collection(db, "donations"),
+        donationData
+      );
+      const donationId = donationRef.id;
+
+      const userRef = doc(db, "users", user.id);
+      await updateDoc(userRef, {
+        donations: arrayUnion(donationId),
+      });
 
       // Oculta el indicador de progreso
       setUploading(false);
@@ -79,43 +103,43 @@ const DonationModal = (props) => {
   };
 
   //get actual position and set it to the map
-  const [position, setPosition] = useState({
-    latitude: 0,
-    longitude: 0,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  });
+  // const [position, setPosition] = useState({
+  //   latitude: 0,
+  //   longitude: 0,
+  //   latitudeDelta: 0.0922,
+  //   longitudeDelta: 0.0421,
+  // });
 
-  const handleMarkerPress = (event) => {
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    setAddress([latitude, longitude]);
-    setPosition({
-      latitude: latitude,
-      longitude: longitude,
-    });
-  };
+  // const handleMarkerPress = (event) => {
+  //   const { latitude, longitude } = event.nativeEvent.coordinate;
+  //   setAddress([latitude, longitude]);
+  //   setPosition({
+  //     latitude: latitude,
+  //     longitude: longitude,
+  //   });
+  // };
 
-  useEffect(() => {
-    (async () => {
-      try {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          alert("Permission to access location was denied");
-          return;
-        }
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       let { status } = await Location.requestForegroundPermissionsAsync();
+  //       if (status !== "granted") {
+  //         alert("Permission to access location was denied");
+  //         return;
+  //       }
 
-        let location = await Location.getCurrentPositionAsync({});
-        setPosition({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        });
-      } catch (error) {
-        alert(error.message);
-      }
-    })();
-  }, []);
+  //       let location = await Location.getCurrentPositionAsync({});
+  //       setPosition({
+  //         latitude: location.coords.latitude,
+  //         longitude: location.coords.longitude,
+  //         latitudeDelta: 0.0922,
+  //         longitudeDelta: 0.0421,
+  //       });
+  //     } catch (error) {
+  //       alert(error.message);
+  //     }
+  //   })();
+  // }, []);
 
   return (
     <SafeAreaView className="bg-primary h-full w-screen">
@@ -175,43 +199,36 @@ const DonationModal = (props) => {
           />
         </View>
 
-        {/* Opción de ubicación */}
-        <View className="mb-2 w-64">
-          <Text className="text-black mb-1">Usar ubicación registrada:</Text>
-          <Switch
-            className="transform scale-75"
-            value={useRegisteredLocation}
-            onValueChange={(value) => setUseRegisteredLocation(value)}
-          />
-        </View>
-
-        {/* MapView */}
-        {useRegisteredLocation ? (
-          <Text className="text-black mb-2 w-64">
-            Utilizando ubicacion registrada
-          </Text>
-        ) : (
-          <MapView
-            className="w-64 h-60"
-            region={position}
-            onPress={handleMarkerPress}
-          >
-            <Marker coordinate={position} />
-          </MapView>
-        )}
-
         {/* Date picker */}
 
         <View className="items-center w-64 flex-row">
           <Text>Fecha para recoleccion:</Text>
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="alert"
-            onChange={handleDateChange}
-            minimumDate={campaign.start_date.toDate()}
-            maximumDate={campaign.end_date.toDate()}
-          />
+          {Platform.OS === "android" ? (
+            <View>
+              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                <Text>Select Date</Text>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display="default"
+                  onChange={handleDateChange}
+                  minimumDate={campaign.start_date.toDate()}
+                  maximumDate={campaign.end_date.toDate()}
+                />
+              )}
+            </View>
+          ) : (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="alert"
+              onChange={handleDateChange}
+              minimumDate={campaign.start_date.toDate()}
+              maximumDate={campaign.end_date.toDate()}
+            />
+          )}
         </View>
         {/* Botón de donación */}
         <TouchableOpacity
