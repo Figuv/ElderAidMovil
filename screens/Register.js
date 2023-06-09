@@ -67,7 +67,7 @@ const RegisterScreen = (props) => {
       latitude: latitude,
       longitude: longitude,
     });
-    console.log(address);
+    // console.log(address);
   };
 
   useEffect(() => {

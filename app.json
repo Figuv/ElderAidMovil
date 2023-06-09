@@ -21,10 +21,22 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.figuv.ElderAidMovil",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAUQvbGr6AIx9Ve-p6WiMg3Hl0hjwaJk_A"
+        }
       }
+      
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0f35cd9a-dfd8-42fb-8684-900f4c6f4b86"
+      }
     }
   }
 }
